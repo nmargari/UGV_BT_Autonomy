@@ -2,10 +2,6 @@
 build/
 cmake-build/
 
-# ImGui & rlImGui
-imgui/
-rlImGui
-
 # Compiled
 *.o
 *.a
