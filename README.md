@@ -186,11 +186,3 @@ xdg-open docs/html/index.html
 ```
 
 ---
-
-## Future Work
-
-This project is designed as the first step toward a larger thesis on drone swarm orchestration. Planned extensions include:
-
-- Integration with ROS 2 and Gazebo for realistic simulation
-- Multi-agent coordination using a shared Blackboard over P2P communication
-- Extension of the BT orchestration layer to a full swarm abstraction layer
