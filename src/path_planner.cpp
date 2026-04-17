@@ -95,8 +95,8 @@ std::vector<Vector2> PathPlanner::reconstructPath(
 }
 
 std::vector<Vector2> PathPlanner::findPath(
-    Vector2      start,
-    Vector2      goal,
+    Vector2 start,
+    Vector2 goal,
     const World& world) const
 {
     // Min-heap ordered by f cost
@@ -157,9 +157,9 @@ std::vector<Vector2> PathPlanner::findPath(
             }
 
             // Diagonal movement costs more than cardinal
-            float dx         = static_cast<float>(nx - current.x);
-            float dy         = static_cast<float>(ny - current.y);
-            float move_cost  = (dx != 0.0f && dy != 0.0f) ? 1.414f : 1.0f;
+            float dx = static_cast<float>(nx - current.x);
+            float dy = static_cast<float>(ny - current.y);
+            float move_cost = (dx != 0.0f && dy != 0.0f) ? 1.414f : 1.0f;
             float tentative_g = g_cost[current.y][current.x] + move_cost;
 
             if (tentative_g < g_cost[ny][nx])
