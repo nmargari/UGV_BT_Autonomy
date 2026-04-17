@@ -13,6 +13,9 @@ find_package(raylib REQUIRED)
 # Executable
 add_executable(UGV_BT_Autonomy
     src/main.cpp
+    src/simulation.cpp
+    src/bt_engine.cpp
+    src/renderer.cpp
 )
 
 target_include_directories(UGV_BT_Autonomy PRIVATE

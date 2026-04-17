@@ -32,9 +32,13 @@ int main()
 
 
     /// Initialize blackboard
-    blackboard->set("target_velocity", 0.0f);
-    blackboard->set("avoid", false);
-    blackboard->set("return_to_base", false);
+    blackboard->set("neighbors_blocked", std::array<bool, 8>{});
+    blackboard->set("battery_level", Config::BATTERY_MAX);
+    blackboard->set("robot_position", Vector2{ 1.0f, 1.0f });
+    blackboard->set("compass_heading", Direction::N);
+    blackboard->set("goal_direction", Direction::N);
+    blackboard->set("goal_angle_diff", 0);
+    blackboard->set("is_stuck", false);
 
     /// Fixed timestep
     const float FIXED_DT = 1.0f / Config::FPS_TARGET;
