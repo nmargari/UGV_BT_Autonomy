@@ -29,7 +29,7 @@ Using this limited information, the Behavior Tree decides at every tick what the
 
 ## Architecture
 
-The program is structured around **5 components** that communicate through a shared Blackboard:
+The program is structured around **3 components** that communicate through a shared Blackboard:
 
 ```
 Main Loop
