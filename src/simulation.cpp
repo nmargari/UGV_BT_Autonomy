@@ -9,9 +9,9 @@
 #include <ctime>
 #include <cmath>
 
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 //  Direction helpers
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 
 Direction rotateClockwise90(Direction dir)
 {
@@ -27,22 +27,16 @@ Direction rotateCounterClockwise90(Direction dir)
 
 Direction directionTo(Vector2 from, Vector2 to)
 {
-    float dx = (to.x - from.x);
-    float dy = -(to.y - from.y); // Invert Y for Raylib screen coordinates (Y grows downward)
+    float dx =  (to.x - from.x);
+    float dy = -(to.y - from.y);  // Invert Y for Raylib screen coordinates (Y grows downward)
 
-    // Compute angle in degrees, then snap to nearest compass direction
     float angle = std::atan2(dy, dx) * (180.0f / 3.14159265f);
 
-    // Convert to 0-360 range
     if (angle < 0.0f)
     {
         angle += 360.0f;
     }
 
-    // Map angle to 8 directions
-    // atan2 uses East=0, counter-clockwise positive
-    // Our enum uses North=0, clockwise positive
-    // Offset by 90 degrees and snap to nearest 45-degree sector
     int sector = static_cast<int>((angle + 22.5f) / 45.0f) % 8;
 
     // Remap from atan2 sectors to Direction enum
@@ -63,9 +57,15 @@ Direction directionTo(Vector2 from, Vector2 to)
     return remap[sector];
 }
 
-// ---------------------------------------------
+Direction snapToDirection(Vector2 force)
+{
+    // Reuse directionTo by treating force as an offset from origin
+    return directionTo({ 0.0f, 0.0f }, { force.x, -force.y });
+}
+
+// ─────────────────────────────────────────────
 //  World
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 
 void World::generate()
 {
@@ -81,7 +81,7 @@ void World::generate()
     {
         for (int x = 0; x < Config::GRID_WIDTH; x++)
         {
-            grid[y][x]          = false;
+            grid[y][x] = false;
             inflated_grid[y][x] = false;
         }
     }
@@ -93,8 +93,8 @@ void World::generate()
         {
             bool is_start = (x == static_cast<int>(start.x) &&
                              y == static_cast<int>(start.y));
-            bool is_goal  = (x == static_cast<int>(goal.x)  &&
-                             y == static_cast<int>(goal.y));
+            bool is_goal = (x == static_cast<int>(goal.x)  &&
+                            y == static_cast<int>(goal.y));
 
             if (is_start || is_goal)
             {
@@ -150,7 +150,7 @@ void World::inflate()
 
     // Always keep start and goal walkable regardless of inflation
     inflated_grid[static_cast<int>(start.y)][static_cast<int>(start.x)] = false;
-    inflated_grid[static_cast<int>(goal.y)] [static_cast<int>(goal.x)]  = false;
+    inflated_grid[static_cast<int>(goal.y)] [static_cast<int>(goal.x)] = false;
 }
 
 bool World::inBounds(int x, int y) const
@@ -164,18 +164,18 @@ bool World::isWalkable(int x, int y) const
     return inBounds(x, y) && !inflated_grid[y][x];
 }
 
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 //  Robot
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 
 void Robot::init(Vector2 start)
 {
-    position       = start;
-    compass        = Direction::N;
-    battery        = Config::BATTERY_MAX;
-    speed          = Config::MOVE_SPEED;
+    position = start;
+    compass = Direction::N;
+    battery = Config::BATTERY_MAX;
+    speed = Config::MOVE_SPEED;
     wall_following = false;
-    stuck_counter  = 0;
+    stuck_counter = 0;
 }
 
 void Robot::move(Direction dir, float dt)
@@ -210,9 +210,9 @@ Vector2 Robot::getCell() const
     };
 }
 
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 //  Sensors
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 
 std::array<bool, Sensors::NEIGHBOR_COUNT> Sensors::scanNeighbors(
     const World& world, const Robot& robot) const
@@ -249,34 +249,75 @@ std::array<bool, Sensors::NEIGHBOR_COUNT> Sensors::scanNeighbors(
     return blocked;
 }
 
+Vector2 Sensors::computeResultantForce(const World& world, const Robot& robot) const
+{
+    // Attractive force: pulls robot toward goal
+    Vector2 f_att =
+    {
+        Config::K_ATT * (world.goal.x - robot.position.x),
+        Config::K_ATT * (world.goal.y - robot.position.y)
+    };
+
+    // Repulsive force: sum of pushes from all obstacles within REP_RANGE
+    Vector2 f_rep = { 0.0f, 0.0f };
+
+    int rx = static_cast<int>(robot.getCell().x);
+    int ry = static_cast<int>(robot.getCell().y);
+
+    for (int dy = -Config::REP_RANGE; dy <= Config::REP_RANGE; dy++)
+    {
+        for (int dx = -Config::REP_RANGE; dx <= Config::REP_RANGE; dx++)
+        {
+            int nx = rx + dx;
+            int ny = ry + dy;
+
+            if (!world.inBounds(nx, ny) || !world.grid[ny][nx])
+            {
+                continue;
+            }
+
+            float dist_x = robot.position.x - static_cast<float>(nx);
+            float dist_y = robot.position.y - static_cast<float>(ny);
+            float dist = std::sqrt(dist_x * dist_x + dist_y * dist_y);
+
+            if (dist < 0.01f)
+            {
+                continue;
+            }
+
+            // Repulsive force magnitude: K_REP / d^2
+            float magnitude = Config::K_REP / (dist * dist);
+
+            f_rep.x += magnitude * (dist_x / dist);
+            f_rep.y += magnitude * (dist_y / dist);
+        }
+    }
+
+    return { f_att.x + f_rep.x, f_att.y + f_rep.y };
+}
+
 void Sensors::writeBlackboard(
     BT::Blackboard::Ptr blackboard,
-    const World&        world,
-    const Robot&        robot) const
+    const World& world,
+    const Robot& robot) const
 {
     auto neighbors = scanNeighbors(world, robot);
-
-    Direction goal_dir   = directionTo(robot.position, world.goal);
-    int       compass_i  = static_cast<int>(robot.compass);
-    int       goal_i     = static_cast<int>(goal_dir);
-
-    // Clockwise steps from current compass heading to goal direction
-    int angle_diff = (goal_i - compass_i + 8) % 8;
-
+    auto resultant_force = computeResultantForce(world, robot);
+    Direction goal_dir = directionTo(robot.position, world.goal);
     bool is_stuck = robot.stuck_counter >= Config::STUCK_THRESHOLD;
 
     blackboard->set("neighbors_blocked", neighbors);
-    blackboard->set("battery_level",     robot.battery);
-    blackboard->set("robot_position",    robot.position);
-    blackboard->set("compass_heading",   robot.compass);
-    blackboard->set("goal_direction",    goal_dir);
-    blackboard->set("goal_angle_diff",   angle_diff);
-    blackboard->set("is_stuck",          is_stuck);
+    blackboard->set("battery_level", robot.battery);
+    blackboard->set("robot_position", robot.position);
+    blackboard->set("compass_heading", robot.compass);
+    blackboard->set("goal_direction", goal_dir);
+    blackboard->set("resultant_force", resultant_force);
+    blackboard->set("is_stuck", is_stuck);
 }
 
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 //  Simulation
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 
 Simulation::Simulation(BT::Blackboard::Ptr blackboard)
     : blackboard_(blackboard)
