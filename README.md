@@ -1,17 +1,8 @@
 # UGV_BT_Autonomy
 
-A simulation of an autonomous Unmanned Ground Vehicle (UGV) navigating a 2D obstacle grid using a **Behavior Tree** for decision-making and **reactive navigation** with wall following for movement.
+A simulation of an autonomous Unmanned Ground Vehicle (UGV) navigating a 2D obstacle grid using a **Behavior Tree** for decision-making, **Potential Fields** for reactive navigation, and **Wall Following** as a fallback when the robot gets stuck.
 
----
-
-## Overview
-
-The robot has no global map knowledge. It knows only:
-- Its current position and compass heading
-- The **direction** of the goal (not its exact location)
-- What its sensors report about neighboring cells
-
-Using this limited information, the Behavior Tree decides at every tick what the robot should do: move toward the goal, follow a wall to bypass an obstacle, or return to base if the battery is low.
+This project is a course assignment for the postgraduate program *"Unmanned Autonomous and Remotely Piloted Systems"* and serves as a foundation for future research into drone swarm orchestration.
 
 ---
 
@@ -29,7 +20,7 @@ Using this limited information, the Behavior Tree decides at every tick what the
 
 ## Architecture
 
-The program is structured around **3 components** that communicate through a shared Blackboard:
+The program is structured around **5 components** that communicate through a shared Blackboard:
 
 ```
 Main Loop
@@ -37,7 +28,7 @@ Main Loop
 │   └── writes sensor data → Blackboard
 ├── BT Engine (Conditions · Actions)
 │   ├── reads sensor data ← Blackboard
-│   └── writes movement commands → Robot
+│   └── drives robot movement → Robot
 └── Renderer
     └── reads state ← Simulation
 ```
@@ -56,7 +47,7 @@ Contains three sub-components:
 
 - **World** — a 2D boolean grid of size `GRID_WIDTH × GRID_HEIGHT`. Randomly generated at startup with a configurable obstacle ratio. Maintains a second `inflated_grid` where obstacles are expanded by `SAFETY_MARGIN` cells in all directions, used by sensors to determine safe movement options.
 - **Robot** — holds the current position (continuous), compass heading (`Direction` enum), battery level, speed, and wall-following state. Movement is driven exclusively by BT action nodes.
-- **Sensors** — scans up to 8 neighboring cells within `SENSOR_RANGE` and writes results to the Blackboard every tick.
+- **Sensors** — scans up to 8 neighboring cells within `SENSOR_RANGE`, computes the Potential Fields resultant force, and writes all results to the Blackboard every tick.
 
 ### Blackboard
 
@@ -69,8 +60,23 @@ The shared key-value store used for all communication between Simulation and BT 
 | `robot_position` | `Vector2` | Sensors | Current robot position in grid coordinates |
 | `compass_heading` | `Direction` | Sensors | Current robot facing direction |
 | `goal_direction` | `Direction` | Sensors | Closest compass direction toward goal |
-| `goal_angle_diff` | `int` | Sensors | Clockwise steps from compass to goal direction |
+| `resultant_force` | `Vector2` | Sensors | Potential Fields resultant force vector |
 | `is_stuck` | `bool` | Sensors | True if robot has not made progress for `STUCK_THRESHOLD` steps |
+
+### Navigation Strategy
+
+Navigation is handled by two complementary algorithms managed by the Behavior Tree:
+
+**Potential Fields (primary)** — each cell exerts a force on the robot:
+- Attractive force from the goal pulls the robot toward it
+- Repulsive forces from nearby obstacles push the robot away
+- The robot moves in the direction of the resultant force, snapped to the nearest of the 8 compass directions
+
+**Wall Following (fallback)** — activated when the robot is stuck in a local minimum:
+- The robot follows the wall using the right-hand rule (configurable)
+- Continues until the resultant force points away from the wall and progress resumes
+
+The **compass** supports wall following by providing orientation awareness — the robot needs to know which side is "right" relative to its current heading.
 
 ### BT Engine
 
@@ -83,29 +89,16 @@ Root Selector
 │   └── ReturnToBase
 └── Sequence — Navigate
     ├── Selector — Movement
-    │   ├── Sequence — Direct move
+    │   ├── Sequence — Potential Fields
     │   │   ├── IsDirectionClear?
     │   │   └── MoveTowardGoal
     │   └── WallFollow
     └── IsGoalReached?
 ```
 
-**Priority** is left-to-right: the emergency branch always runs first. If the battery is low, the robot returns to base regardless of its current task. Otherwise, the navigation branch runs: the robot moves directly toward the goal when the path is clear, or activates wall following when stuck.
-
-### Navigation Logic
-
-The robot uses **greedy direction-based navigation** as its primary strategy:
-
-1. Compute the compass direction from current position to goal
-2. If the cell in that direction is free → move there
-3. If blocked → activate **wall following** (right-hand rule by default)
-4. Wall following continues until the robot can again move toward the goal
-
-The `stuck_counter` in the Robot struct tracks steps without progress. When it reaches `STUCK_THRESHOLD`, the `is_stuck` flag is set on the Blackboard and the BT switches to wall following mode.
-
 ### Renderer
 
-Reads the Simulation state and draws the world using Raylib. Draws grid cells, obstacles, robot position, compass heading, and goal.
+Reads the Simulation state and draws the world using Raylib. Draws grid cells, obstacles, robot position, compass heading, goal, and the resultant force vector.
 
 ---
 
@@ -126,8 +119,11 @@ All parameters are defined as `constexpr` values in `include/config.h`. No recom
 | `COMPASS_8DIR` | true | Enable 8-directional compass |
 | `SENSOR_RANGE` | 1 | Sensor range in cells |
 | `SENSOR_DIAGONAL` | true | Enable diagonal neighbor detection |
+| `K_ATT` | 1.0 | Attractive force constant toward goal |
+| `K_REP` | 2.0 | Repulsive force constant from obstacles |
+| `REP_RANGE` | 3 | Obstacle repulsion range in cells |
 | `STUCK_THRESHOLD` | 10 | Steps without progress before wall following |
-| `GOAL_REACH_DIST` | 0.5 | Distance to consider goal reached |
+| `GOAL_REACH_DIST` | 0.5 | Distance in cells to consider goal reached |
 | `WALL_FOLLOW_RIGHT` | true | Follow wall on the right side |
 | `CELL_SIZE` | 24 | Pixels per grid cell |
 | `SCREEN_WIDTH` | 1280 | Window width in pixels |
@@ -186,3 +182,11 @@ xdg-open docs/html/index.html
 ```
 
 ---
+
+## Future Work
+
+This project is designed as the first step toward a larger thesis on drone swarm orchestration. Planned extensions include:
+
+- Integration with ROS 2 and Gazebo for realistic simulation
+- Multi-agent coordination using a shared Blackboard over P2P communication
+- Extension of the BT orchestration layer to a full swarm abstraction layer
