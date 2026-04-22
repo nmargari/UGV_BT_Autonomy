@@ -6,9 +6,9 @@
  * is updated every tick before the BT engine runs, ensuring the
  * Blackboard always contains fresh sensor data.
  *
- * Navigation is handled reactively: the robot uses its compass
- * to determine the goal direction and moves greedily toward it.
- * Wall following is activated when the robot is stuck.
+ * Navigation is handled reactively using Potential Fields as the
+ * primary strategy and Wall Following as fallback when the robot
+ * gets stuck in a local minimum.
  */
 
 #pragma once
@@ -19,9 +19,9 @@
 
 #include "config.h"
 
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 //  Direction
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 
 /**
  * @brief 8-directional compass rose used by robot orientation and sensors
@@ -74,17 +74,29 @@ Direction rotateCounterClockwise90(Direction dir);
  */
 Direction directionTo(Vector2 from, Vector2 to);
 
-// ---------------------------------------------
+/**
+ * @brief Snaps a continuous force vector to the nearest compass Direction
+ *
+ * Converts the angle of the vector to the closest of the 8 compass
+ * directions. Used to translate the Potential Fields resultant force
+ * into a discrete grid movement direction.
+ *
+ * @param force The resultant force vector
+ * @return The nearest Direction
+ */
+Direction snapToDirection(Vector2 force);
+
+// ─────────────────────────────────────────────
 //  World
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 
 /**
  * @brief 2D grid world containing obstacles, start and goal positions
  *
  * Holds two grids: the raw obstacle grid and an inflated version
  * used to enforce the safety margin around obstacles.
- * The world is randomly generated and guaranteed to have at least
- * one clear cell adjacent to both start and goal.
+ * The world is randomly generated and guaranteed to have start
+ * and goal cells always free.
  */
 struct World
 {
@@ -98,8 +110,7 @@ struct World
      * @brief Randomly generates the world with obstacles
      *
      * Places obstacles based on Config::OBSTACLE_RATIO.
-     * Guarantees that start and goal cells are always free
-     * and have at least one free neighbor.
+     * Guarantees that start and goal cells are always free.
      */
     void generate();
 
@@ -129,16 +140,16 @@ struct World
     bool isWalkable(int x, int y) const;
 };
 
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 //  Robot
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 
 /**
  * @brief Represents the UGV state including position, compass and battery
  *
- * The robot navigates reactively using its compass to determine
- * the goal direction. It has no global map knowledge — it only
- * knows its current cell, orientation, and what the sensors report.
+ * The robot navigates reactively using Potential Fields. It has no
+ * global map knowledge — it only knows its current cell, orientation,
+ * and what the sensors report.
  */
 struct Robot
 {
@@ -157,8 +168,8 @@ struct Robot
 
     /**
      * @brief Moves the robot one step in the given direction
-     * @param dir   Direction to move
-     * @param dt    Delta time in seconds
+     * @param dir Direction to move
+     * @param dt  Delta time in seconds
      */
     void move(Direction dir, float dt);
 
@@ -175,20 +186,20 @@ struct Robot
 
     /**
      * @brief Returns the current grid cell of the robot
-     * @return Grid cell position as integer Vector2
+     * @return Grid cell position as integer-snapped Vector2
      */
     Vector2 getCell() const;
 };
 
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 //  Sensors
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 
 /**
  * @brief Reads the environment around the robot and writes results to the Blackboard
  *
- * Scans neighboring cells within Config::SENSOR_RANGE and computes
- * compass-based navigation data. All results are written to the
+ * Scans neighboring cells within Config::SENSOR_RANGE, computes the
+ * Potential Fields resultant force, and writes all results to the
  * Blackboard so BT condition nodes can read them without accessing
  * the World or Robot directly.
  *
@@ -198,7 +209,7 @@ struct Robot
  * - "robot_position"    : Vector2             — current robot position
  * - "compass_heading"   : Direction           — current robot orientation
  * - "goal_direction"    : Direction           — closest direction toward goal
- * - "goal_angle_diff"   : int                 — clockwise steps from compass to goal direction
+ * - "resultant_force"   : Vector2             — Potential Fields resultant force vector
  * - "is_stuck"          : bool               — true if stuck_counter >= Config::STUCK_THRESHOLD
  */
 struct Sensors
@@ -214,6 +225,19 @@ struct Sensors
     std::array<bool, NEIGHBOR_COUNT> scanNeighbors(const World& world, const Robot& robot) const;
 
     /**
+     * @brief Computes the Potential Fields resultant force acting on the robot
+     *
+     * Combines:
+     * - Attractive force from the goal: K_ATT * (goal - position)
+     * - Repulsive forces from all obstacles within REP_RANGE: K_REP / d^2 * (position - obstacle)
+     *
+     * @param world The current world grid
+     * @param robot The robot to compute forces for
+     * @return Resultant force vector
+     */
+    Vector2 computeResultantForce(const World& world, const Robot& robot) const;
+
+    /**
      * @brief Writes all sensor readings to the shared Blackboard
      * @param blackboard Shared Blackboard instance
      * @param world      The current world grid
@@ -222,9 +246,9 @@ struct Sensors
     void writeBlackboard(BT::Blackboard::Ptr blackboard, const World& world, const Robot& robot) const;
 };
 
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 //  Simulation
-// ---------------------------------------------
+// ─────────────────────────────────────────────
 
 /**
  * @brief Top-level simulation class that owns World, Robot and Sensors
@@ -244,7 +268,7 @@ public:
     /**
      * @brief Advances the simulation by one fixed timestep
      *
-     * Executes in order: battery drain → sensor scan → Blackboard write.
+     * Executes in order: battery drain -> sensor scan -> Blackboard write.
      * Robot movement is driven by BT action nodes, not by this method.
      *
      * @param dt Delta time in seconds
