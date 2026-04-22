@@ -18,7 +18,7 @@ A simulation of an autonomous Unmanned Ground Vehicle (UGV) navigating a 2D obst
 
 ## Architecture
 
-The program is structured around **5 components** that communicate through a shared Blackboard:
+The program is structured around **3 components** that communicate through a shared Blackboard:
 
 ```
 Main Loop
