@@ -2,8 +2,6 @@
 
 A simulation of an autonomous Unmanned Ground Vehicle (UGV) navigating a 2D obstacle grid using a **Behavior Tree** for decision-making, **Potential Fields** for reactive navigation, and **Wall Following** as a fallback when the robot gets stuck.
 
-This project is a course assignment for the postgraduate program *"Unmanned Autonomous and Remotely Piloted Systems"* and serves as a foundation for future research into drone swarm orchestration.
-
 ---
 
 ## Technologies
