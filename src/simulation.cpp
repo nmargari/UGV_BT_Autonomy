@@ -59,8 +59,32 @@ Direction directionTo(Vector2 from, Vector2 to)
 
 Direction snapToDirection(Vector2 force)
 {
-    // Reuse directionTo by treating force as an offset from origin
-    return directionTo({ 0.0f, 0.0f }, { force.x, -force.y });
+    // Force is in screen coordinates (Y grows downward)
+    // Pass directly without inverting Y
+    float angle = std::atan2(force.y, force.x) * (180.0f / 3.14159265f);
+
+    if (angle < 0.0f)
+    {
+        angle += 360.0f;
+    }
+
+    // Snap to nearest 45-degree sector
+    // atan2 with screen coords: E=0, SE=45, S=90, SW=135, W=180, NW=225, N=270, NE=315
+    int sector = static_cast<int>((angle + 22.5f) / 45.0f) % 8;
+
+    constexpr Direction remap[8] =
+    {
+        Direction::E,
+        Direction::SE,
+        Direction::S,
+        Direction::SW,
+        Direction::W,
+        Direction::NW,
+        Direction::N,
+        Direction::NE
+    };
+
+    return remap[sector];
 }
 
 // ─────────────────────────────────────────────

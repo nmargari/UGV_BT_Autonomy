@@ -42,7 +42,7 @@ namespace Config
     /// @{
 
     constexpr int SENSOR_RANGE = 1;      ///< Sensor perception range in cells
-    constexpr bool  SENSOR_DIAGONAL = true;   ///< Whether sensors detect diagonal neighbors
+    constexpr bool SENSOR_DIAGONAL = true;   ///< Whether sensors detect diagonal neighbors
 
     /// @}
 
@@ -50,7 +50,7 @@ namespace Config
     /// @{
 
     constexpr float K_ATT = 1.0f;   ///< Attractive force constant toward goal
-    constexpr float K_REP = 2.0f;   ///< Repulsive force constant from obstacles
+    constexpr float K_REP = 10.0f;   ///< Repulsive force constant from obstacles
     constexpr int REP_RANGE = 3;      ///< Obstacle repulsion range in cells
     constexpr int STUCK_THRESHOLD = 10;     ///< Steps without progress before switching to wall following
     constexpr float GOAL_REACH_DIST = 0.5f;   ///< Distance in cells to consider goal reached
