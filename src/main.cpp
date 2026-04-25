@@ -13,7 +13,7 @@
 #include "config.h"
 #include "simulation.h"
 #include "bt_engine.h"
-// #include "renderer.h"
+#include "renderer.h"
 
 /**
  * @brief Application entry point
@@ -32,7 +32,7 @@ int main()
 
     Simulation simulation(blackboard);
     BTEngine bt_engine(blackboard, simulation);
-    // Renderer renderer;
+    Renderer renderer;
 
     // Initialize Blackboard with default values to prevent
     // uninitialized reads on the first frame
@@ -66,7 +66,7 @@ int main()
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        // renderer.draw(simulation);
+        renderer.draw(simulation);
         EndDrawing();
     }
 

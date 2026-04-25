@@ -153,12 +153,13 @@ struct World
  */
 struct Robot
 {
-    Vector2 position;       ///< Current position in grid coordinates (continuous)
-    Direction compass;        ///< Current facing direction
-    float battery;        ///< Current battery level (0.0 to Config::BATTERY_MAX)
-    float speed;          ///< Movement speed in cells per second
+    Vector2 position; ///< Current position in grid coordinates (continuous)
+    Direction compass; ///< Current facing direction
+    float battery; ///< Current battery level (0.0 to Config::BATTERY_MAX)
+    float speed; ///< Movement speed in cells per second
     bool wall_following; ///< True if robot is currently in wall following mode
     int stuck_counter;  ///< Number of steps without progress toward goal
+    float prev_dist_to_goal; ///< Distance to goal at previous step, used for stuck detection
 
     /**
      * @brief Initializes the robot at the given position with full battery

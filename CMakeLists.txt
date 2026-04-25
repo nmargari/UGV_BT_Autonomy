@@ -10,6 +10,14 @@ find_package(raylib REQUIRED)
 add_executable(UGV_BT_Autonomy
     src/main.cpp
     src/simulation.cpp
+    src/bt_engine.cpp
+    src/renderer.cpp
+    src/nodes/is_battery_low.cpp
+    src/nodes/is_goal_reached.cpp
+    src/nodes/is_direction_clear.cpp
+    src/nodes/return_to_base.cpp
+    src/nodes/move_toward_goal.cpp
+    src/nodes/wall_follow.cpp
 )
 
 target_include_directories(UGV_BT_Autonomy PRIVATE

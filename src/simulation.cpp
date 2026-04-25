@@ -81,29 +81,54 @@ void World::generate()
     {
         for (int x = 0; x < Config::GRID_WIDTH; x++)
         {
-            grid[y][x] = false;
+            grid[y][x]          = false;
             inflated_grid[y][x] = false;
         }
     }
 
-    // Place obstacles randomly, never on start or goal cells
-    for (int y = 0; y < Config::GRID_HEIGHT; y++)
+    // Cluster-based obstacle 
+    // Place random seeds then expand each into a cluster
+    int num_clusters = static_cast<int>(
+        Config::GRID_WIDTH * Config::GRID_HEIGHT * Config::OBSTACLE_RATIO / 30
+    );
+
+    for (int c = 0; c < num_clusters; c++)
     {
-        for (int x = 0; x < Config::GRID_WIDTH; x++)
+        // Random seed position
+        int seed_x = 2 + std::rand() % (Config::GRID_WIDTH  - 4);
+        int seed_y = 2 + std::rand() % (Config::GRID_HEIGHT - 4);
+
+        // Expand cluster with random radius 2-4
+        int radius = 2 + std::rand() % 3;
+
+        for (int dy = -radius; dy <= radius; dy++)
         {
-            bool is_start = (x == static_cast<int>(start.x) &&
-                             y == static_cast<int>(start.y));
-            bool is_goal = (x == static_cast<int>(goal.x)  &&
-                            y == static_cast<int>(goal.y));
-
-            if (is_start || is_goal)
+            for (int dx = -radius; dx <= radius; dx++)
             {
-                continue;
-            }
+                // Circular cluster shape
+                if (dx * dx + dy * dy > radius * radius)
+                {
+                    continue;
+                }
 
-            if ((std::rand() / static_cast<float>(RAND_MAX)) < Config::OBSTACLE_RATIO)
-            {
-                grid[y][x] = true;
+                int nx = seed_x + dx;
+                int ny = seed_y + dy;
+
+                if (!inBounds(nx, ny))
+                {
+                    continue;
+                }
+
+                // Never place on start or goal
+                bool is_start = (nx == static_cast<int>(start.x) &&
+                                 ny == static_cast<int>(start.y));
+                bool is_goal  = (nx == static_cast<int>(goal.x)  &&
+                                 ny == static_cast<int>(goal.y));
+
+                if (!is_start && !is_goal)
+                {
+                    grid[ny][nx] = true;
+                }
             }
         }
     }
@@ -176,14 +201,23 @@ void Robot::init(Vector2 start)
     speed = Config::MOVE_SPEED;
     wall_following = false;
     stuck_counter = 0;
+    prev_dist_to_goal = std::numeric_limits<float>::max();
 }
 
 void Robot::move(Direction dir, float dt)
 {
     int d = static_cast<int>(dir);
-    position.x += DIRECTION_DX[d] * speed * dt;
-    position.y += DIRECTION_DY[d] * speed * dt;
-    compass = dir;
+
+    float new_x = position.x + DIRECTION_DX[d] * speed * dt;
+    float new_y = position.y + DIRECTION_DY[d] * speed * dt;
+
+    // Clamp position within grid bounds
+    new_x = std::max(0.0f, std::min(new_x, static_cast<float>(Config::GRID_WIDTH  - 1)));
+    new_y = std::max(0.0f, std::min(new_y, static_cast<float>(Config::GRID_HEIGHT - 1)));
+
+    position.x = new_x;
+    position.y = new_y;
+    compass    = dir;
 }
 
 void Robot::setCompass(Direction dir)
@@ -332,6 +366,24 @@ Simulation::Simulation(BT::Blackboard::Ptr blackboard)
 void Simulation::update(float dt)
 {
     robot_.drainBattery();
+
+    // Update stuck counter based on progress toward goal
+    float dx = robot_.position.x - world_.goal.x;
+    float dy = robot_.position.y - world_.goal.y;
+    float dist = std::sqrt(dx * dx + dy * dy);
+
+    if (dist < robot_.prev_dist_to_goal - 0.05f)
+    {
+        // Robot made progress — reset counter
+        robot_.stuck_counter     = 0;
+        robot_.prev_dist_to_goal = dist;
+    }
+    else
+    {
+        // No progress — increment counter
+        robot_.stuck_counter++;
+    }
+
     sensors_.writeBlackboard(blackboard_, world_, robot_);
 }
 

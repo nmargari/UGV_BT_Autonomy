@@ -14,7 +14,7 @@ namespace Config
     /// @defgroup World World configuration
     /// @{
 
-    constexpr int GRID_WIDTH = 30;    ///< Number of columns in the grid
+    constexpr int GRID_WIDTH = 53;    ///< Number of columns in the grid
     constexpr int GRID_HEIGHT = 30;    ///< Number of rows in the grid
     constexpr float OBSTACLE_RATIO = 0.2f;  ///< Fraction of cells that are obstacles (0.0 - 1.0)
     constexpr int SAFETY_MARGIN = 1;     ///< Minimum distance in cells between robot path and obstacles

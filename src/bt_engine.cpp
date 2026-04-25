@@ -20,7 +20,7 @@ static const char* BT_XML = R"(
 <root BTCPP_format="4">
   <BehaviorTree ID="MainTree">
 
-    <Selector>
+    <Fallback>
 
       <!-- Emergency: return to base if battery is low -->
       <Sequence>
@@ -33,7 +33,7 @@ static const char* BT_XML = R"(
 
       <!-- Navigate: move toward goal or follow wall if stuck -->
       <Sequence>
-        <Selector>
+        <Fallback>
           <Sequence>
             <IsDirectionClear
               resultant_force="{resultant_force}"
@@ -45,13 +45,13 @@ static const char* BT_XML = R"(
             neighbors_blocked="{neighbors_blocked}"
             compass_heading="{compass_heading}"
             is_stuck="{is_stuck}"/>
-        </Selector>
+        </Fallback>
         <IsGoalReached
           robot_position="{robot_position}"
           goal_position="{goal_position}"/>
       </Sequence>
 
-    </Selector>
+    </Fallback>
   </BehaviorTree>
 </root>
 )";
