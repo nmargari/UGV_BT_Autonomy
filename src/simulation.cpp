@@ -343,8 +343,15 @@ Vector2 Sensors::computeResultantForce(const World& world, const Robot& robot) c
                 continue;
             }
 
+            if (dist > static_cast<float>(Config::REP_RANGE))
+            {
+                continue;
+            }
+
             // Repulsive force magnitude: K_REP / d^2
-            float magnitude = Config::K_REP / (dist * dist);
+            float d0 = static_cast<float>(Config::REP_RANGE);
+            float factor = (1.0f / dist) - (1.0f / d0);
+            float magnitude = Config::K_REP * factor * factor * (1.0f / (dist * dist));
 
             f_rep.x += magnitude * (dist_x / dist);
             f_rep.y += magnitude * (dist_y / dist);
