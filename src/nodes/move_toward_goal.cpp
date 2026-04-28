@@ -26,13 +26,13 @@ BT::NodeStatus MoveTowardGoal::onStart()
 
 BT::NodeStatus MoveTowardGoal::onRunning()
 {
-    Vector2   force = getInput<Vector2>("resultant_force").value();
-    Direction dir   = snapToDirection(force);
+    Vector2 force = getInput<Vector2>("resultant_force").value();
+    Direction dir = snapToDirection(force);
 
     simulation_.getRobot().move(dir, 1.0f / Config::FPS_TARGET);
 
     // Stuck counter is managed by simulation.update() — not here
-    return BT::NodeStatus::RUNNING;
+    return BT::NodeStatus::SUCCESS;
 }
 
 void MoveTowardGoal::onHalted()
