@@ -7,9 +7,9 @@
 #include "config.h"
 
 WallFollow::WallFollow(
-    const std::string&    name,
+    const std::string& name,
     const BT::NodeConfig& config,
-    Simulation&           simulation)
+    Simulation& simulation)
     : BT::StatefulActionNode(name, config)
     , simulation_(simulation)
 {}
@@ -20,7 +20,8 @@ BT::PortsList WallFollow::providedPorts()
     {
         BT::InputPort<std::array<bool, 8>>("neighbors_blocked"),
         BT::InputPort<Direction>("compass_heading"),
-        BT::InputPort<bool>("is_stuck")
+        BT::InputPort<bool>("is_stuck"),
+        BT::InputPort<Vector2>("resultant_force")
     };
 }
 
@@ -32,40 +33,44 @@ BT::NodeStatus WallFollow::onStart()
 
 BT::NodeStatus WallFollow::onRunning()
 {
-    bool is_stuck = getInput<bool>("is_stuck").value();
+    auto blocked = getInput<std::array<bool, 8>>("neighbors_blocked").value();
+    Direction heading = getInput<Direction>("compass_heading").value();
+    Vector2 force = getInput<Vector2>(resultant_force).value();
 
-    // Return FAILURE to hand control back to MoveTowardGoal
-    if (!is_stuck)
+    Direction force_dir = snapToDirection(force);
+    int force_index = static_cast<int>(force_dir);
+
+    if(!blocked[force_index])
     {
         simulation_.getRobot().wall_following = false;
-        simulation_.getRobot().stuck_counter  = 0;
-        return BT::NodeStatus::FAILURE;
+        simulation_.getRobot().stuck_counter = 0;
+
+        return BT:NodeStatus::FAILURE;
     }
 
-    auto      blocked = getInput<std::array<bool, 8>>("neighbors_blocked").value();
-    Direction heading = getInput<Direction>("compass_heading").value();
-
-    // Determine wall side direction
     Direction side = Config::WALL_FOLLOW_RIGHT ? rightOf(heading) : leftOf(heading);
-    int       side_index  = static_cast<int>(side);
-    int       front_index = static_cast<int>(heading);
+    Direction away = Config::Wall_FOLLOW_RIGHT ? leftOf(heading) : rightOf(heading);
+
+    int side_index = static_cast<int>(side);
+    int front_index = static_cast<int>(heading);
+    int away_index = static_cast<int>(away);
 
     Robot& robot = simulation_.getRobot();
 
-    if (!blocked[side_index])
+    if(!blocked[side_index])
     {
-        // Side is free — turn toward it and move
         robot.move(side, 1.0f / Config::FPS_TARGET);
     }
-    else if (!blocked[front_index])
+    else if(!blocked[front_index])
     {
-        // Side is blocked but front is free — move forward
         robot.move(heading, 1.0f / Config::FPS_TARGET);
+    }
+    else if(!blocked[away_index])
+    {
+        robot.move(away, 1.0f / Config::FPS_TARGET);
     }
     else
     {
-        // Both side and front are blocked — turn away from wall
-        Direction away = Config::WALL_FOLLOW_RIGHT ? leftOf(heading) : rightOf(heading);
         robot.setCompass(away);
     }
 
