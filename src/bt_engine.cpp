@@ -44,7 +44,8 @@ static const char* BT_XML = R"(
           <WallFollow
             neighbors_blocked="{neighbors_blocked}"
             compass_heading="{compass_heading}"
-            is_stuck="{is_stuck}"/>
+            is_stuck="{is_stuck}"
+            resultant_force="{resultant_force}"/>
         </Fallback>
         <IsGoalReached
           robot_position="{robot_position}"
