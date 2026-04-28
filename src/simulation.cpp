@@ -322,6 +322,8 @@ Vector2 Sensors::computeResultantForce(const World& world, const Robot& robot) c
     int rx = static_cast<int>(robot.getCell().x);
     int ry = static_cast<int>(robot.getCell().y);
 
+    const float d0 = static_cast<float>(Config::REP_RANGE);
+
     for (int dy = -Config::REP_RANGE; dy <= Config::REP_RANGE; dy++)
     {
         for (int dx = -Config::REP_RANGE; dx <= Config::REP_RANGE; dx++)
@@ -349,7 +351,6 @@ Vector2 Sensors::computeResultantForce(const World& world, const Robot& robot) c
             }
 
             // Repulsive force magnitude: K_REP / d^2
-            float d0 = static_cast<float>(Config::REP_RANGE);
             float factor = (1.0f / dist) - (1.0f / d0);
             float magnitude = Config::K_REP * factor * factor * (1.0f / (dist * dist));
 
