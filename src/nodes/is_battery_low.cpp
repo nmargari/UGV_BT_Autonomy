@@ -6,20 +6,22 @@
 #include "nodes/is_battery_low.h"
 #include "config.h"
 
-IsBatteryLow::IsBatteryLow(const std::string& name, const BT::NodeConfig& config)
+IsBatteryLow::IsBatteryLow(
+    const std::string&    name,
+    const BT::NodeConfig& config,
+    Simulation&           simulation)
     : BT::ConditionNode(name, config)
+    , simulation_(simulation)
 {}
 
 BT::PortsList IsBatteryLow::providedPorts()
 {
-    return { BT::InputPort<float>("battery_level") };
+    return {};
 }
 
 BT::NodeStatus IsBatteryLow::tick()
 {
-    float battery = getInput<float>("battery_level").value();
-
-    if (battery < Config::BATTERY_LOW)
+    if (simulation_.getRobot().battery < Config::BATTERY_LOW)
     {
         return BT::NodeStatus::SUCCESS;
     }

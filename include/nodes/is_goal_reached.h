@@ -6,34 +6,34 @@
 #pragma once
 
 #include <behaviortree_cpp/bt_factory.h>
-#include <raylib.h>
+
+#include "simulation.h"
 
 /**
- * @brief Returns SUCCESS if the robot is within Config::GOAL_REACH_DIST of the goal
- *
- * Reads from Blackboard:
- * - "robot_position" : Vector2
- * - "goal_position"  : Vector2
+ * @brief Returns SUCCESS if robot is within Config::GOAL_REACH_DIST of the goal
  */
 class IsGoalReached : public BT::ConditionNode
 {
 public:
     /**
      * @brief Constructor
-     * @param name   Node name used in the BT tree
-     * @param config Node configuration provided by BehaviorTree.CPP
+     * @param name       Node name
+     * @param config     Node configuration
+     * @param simulation Reference to the simulation
      */
-    IsGoalReached(const std::string& name, const BT::NodeConfig& config);
+    IsGoalReached(const std::string& name, const BT::NodeConfig& config, Simulation& simulation);
 
     /**
-     * @brief Declares the Blackboard ports used by this node
-     * @return List of input ports
+     * @brief No ports — reads directly from simulation
      */
     static BT::PortsList providedPorts();
 
     /**
-     * @brief Checks the distance between robot and goal
-     * @return SUCCESS if within Config::GOAL_REACH_DIST, FAILURE otherwise
+     * @brief Checks distance between robot and goal
+     * @return SUCCESS if goal is reached, FAILURE otherwise
      */
     BT::NodeStatus tick() override;
+
+private:
+    Simulation& simulation_; ///< Reference to the simulation
 };

@@ -5,28 +5,32 @@
 
 #include "nodes/is_direction_clear.h"
 
-IsDirectionClear::IsDirectionClear(const std::string& name, const BT::NodeConfig& config)
+IsDirectionClear::IsDirectionClear(
+    const std::string&    name,
+    const BT::NodeConfig& config,
+    Simulation&           simulation)
     : BT::ConditionNode(name, config)
+    , simulation_(simulation)
 {}
 
 BT::PortsList IsDirectionClear::providedPorts()
 {
-    return
-    {
-        BT::InputPort<Vector2>("resultant_force"),
-        BT::InputPort<std::array<bool, 8>>("neighbors_blocked")
-    };
+    return {};
 }
 
 BT::NodeStatus IsDirectionClear::tick()
 {
-    Vector2 force   = getInput<Vector2>("resultant_force").value();
-    auto    blocked = getInput<std::array<bool, 8>>("neighbors_blocked").value();
+    const Robot& robot = simulation_.getRobot();
+    const World& world = simulation_.getWorld();
 
+    Vector2   force = simulation_.getResultantForce();
     Direction dir   = snapToDirection(force);
-    int       index = static_cast<int>(dir);
 
-    if (!blocked[index])
+    int d  = static_cast<int>(dir);
+    int nx = static_cast<int>(robot.getCell().x) + DIRECTION_DX[d];
+    int ny = static_cast<int>(robot.getCell().y) + DIRECTION_DY[d];
+
+    if (world.isWalkable(nx, ny))
     {
         return BT::NodeStatus::SUCCESS;
     }

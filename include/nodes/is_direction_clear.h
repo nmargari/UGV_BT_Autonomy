@@ -1,39 +1,30 @@
 /**
  * @file is_direction_clear.h
- * @brief Condition node that checks whether the resultant force direction is clear
+ * @brief Condition node that checks whether the resultant force direction is walkable
  */
 
 #pragma once
 
 #include <behaviortree_cpp/bt_factory.h>
-#include <raylib.h>
-#include <array>
 
 #include "simulation.h"
 
 /**
- * @brief Returns SUCCESS if the cell in the resultant force direction is not blocked
- *
- * Snaps the Potential Fields resultant force to the nearest compass direction
- * and checks whether that cell is free according to sensor readings.
- *
- * Reads from Blackboard:
- * - "resultant_force"   : Vector2
- * - "neighbors_blocked" : std::array<bool, 8>
+ * @brief Returns SUCCESS if the cell in the resultant force direction is walkable
  */
 class IsDirectionClear : public BT::ConditionNode
 {
 public:
     /**
      * @brief Constructor
-     * @param name   Node name used in the BT tree
-     * @param config Node configuration provided by BehaviorTree.CPP
+     * @param name       Node name
+     * @param config     Node configuration
+     * @param simulation Reference to the simulation
      */
-    IsDirectionClear(const std::string& name, const BT::NodeConfig& config);
+    IsDirectionClear(const std::string& name, const BT::NodeConfig& config, Simulation& simulation);
 
     /**
-     * @brief Declares the Blackboard ports used by this node
-     * @return List of input ports
+     * @brief No ports — reads directly from simulation
      */
     static BT::PortsList providedPorts();
 
@@ -42,4 +33,7 @@ public:
      * @return SUCCESS if direction is clear, FAILURE otherwise
      */
     BT::NodeStatus tick() override;
+
+private:
+    Simulation& simulation_; ///< Reference to the simulation
 };

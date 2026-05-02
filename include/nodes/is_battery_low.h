@@ -7,31 +7,33 @@
 
 #include <behaviortree_cpp/bt_factory.h>
 
+#include "simulation.h"
+
 /**
- * @brief Returns SUCCESS if battery_level is below Config::BATTERY_LOW
- *
- * Reads from Blackboard:
- * - "battery_level" : float
+ * @brief Returns SUCCESS if battery is below Config::BATTERY_LOW
  */
 class IsBatteryLow : public BT::ConditionNode
 {
 public:
     /**
      * @brief Constructor
-     * @param name Node name used in the BT tree
-     * @param config Node configuration provided by BehaviorTree.CPP
+     * @param name       Node name
+     * @param config     Node configuration
+     * @param simulation Reference to the simulation
      */
-    IsBatteryLow(const std::string& name, const BT::NodeConfig& config);
+    IsBatteryLow(const std::string& name, const BT::NodeConfig& config, Simulation& simulation);
 
     /**
-     * @brief Declares the Blackboard ports used by this node
-     * @return List of input ports
+     * @brief No ports — reads directly from simulation
      */
     static BT::PortsList providedPorts();
 
     /**
-     * @brief Checks the battery level against Config::BATTERY_LOW
+     * @brief Checks battery level
      * @return SUCCESS if battery is low, FAILURE otherwise
      */
     BT::NodeStatus tick() override;
+
+private:
+    Simulation& simulation_; ///< Reference to the simulation
 };

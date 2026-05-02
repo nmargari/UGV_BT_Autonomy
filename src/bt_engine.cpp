@@ -19,39 +19,21 @@
 static const char* BT_XML = R"(
 <root BTCPP_format="4">
   <BehaviorTree ID="MainTree">
-
     <Fallback>
-
-      <!-- Emergency: return to base if battery is low -->
       <Sequence>
-        <IsBatteryLow
-          battery_level="{battery_level}"/>
-        <ReturnToBase
-          robot_position="{robot_position}"
-          base_position="{base_position}"/>
+        <IsBatteryLow/>
+        <ReturnToBase/>
       </Sequence>
-
-      <!-- Navigate: move toward goal or follow wall if stuck -->
       <Sequence>
         <Fallback>
           <Sequence>
-            <IsDirectionClear
-              resultant_force="{resultant_force}"
-              neighbors_blocked="{neighbors_blocked}"/>
-            <MoveTowardGoal
-              resultant_force="{resultant_force}"/>
+            <IsDirectionClear/>
+            <MoveTowardGoal/>
           </Sequence>
-          <WallFollow
-            neighbors_blocked="{neighbors_blocked}"
-            compass_heading="{compass_heading}"
-            is_stuck="{is_stuck}"
-            resultant_force="{resultant_force}"/>
+          <WallFollow/>
         </Fallback>
-        <IsGoalReached
-          robot_position="{robot_position}"
-          goal_position="{goal_position}"/>
+        <IsGoalReached/>
       </Sequence>
-
     </Fallback>
   </BehaviorTree>
 </root>
@@ -74,34 +56,40 @@ void BTEngine::tick()
 
 void BTEngine::registerNodes(Simulation& simulation)
 {
-    // Condition nodes — simple registration
-    factory_.registerNodeType<IsBatteryLow>("IsBatteryLow");
-    factory_.registerNodeType<IsGoalReached>("IsGoalReached");
-    factory_.registerNodeType<IsDirectionClear>("IsDirectionClear");
-
-    // Action nodes — custom constructor requires lambda builder
-    factory_.registerBuilder<ReturnToBase>(
-        "ReturnToBase",
+    factory_.registerBuilder<IsBatteryLow>(
+        "IsBatteryLow",
         [&simulation](const std::string& name, const BT::NodeConfig& config)
-        {
-            return std::make_unique<ReturnToBase>(name, config, simulation);
-        }
+        { return std::make_unique<IsBatteryLow>(name, config, simulation); }
+    );
+
+    factory_.registerBuilder<IsGoalReached>(
+        "IsGoalReached",
+        [&simulation](const std::string& name, const BT::NodeConfig& config)
+        { return std::make_unique<IsGoalReached>(name, config, simulation); }
+    );
+
+    factory_.registerBuilder<IsDirectionClear>(
+        "IsDirectionClear",
+        [&simulation](const std::string& name, const BT::NodeConfig& config)
+        { return std::make_unique<IsDirectionClear>(name, config, simulation); }
     );
 
     factory_.registerBuilder<MoveTowardGoal>(
         "MoveTowardGoal",
         [&simulation](const std::string& name, const BT::NodeConfig& config)
-        {
-            return std::make_unique<MoveTowardGoal>(name, config, simulation);
-        }
+        { return std::make_unique<MoveTowardGoal>(name, config, simulation); }
     );
 
     factory_.registerBuilder<WallFollow>(
         "WallFollow",
         [&simulation](const std::string& name, const BT::NodeConfig& config)
-        {
-            return std::make_unique<WallFollow>(name, config, simulation);
-        }
+        { return std::make_unique<WallFollow>(name, config, simulation); }
+    );
+
+    factory_.registerBuilder<ReturnToBase>(
+        "ReturnToBase",
+        [&simulation](const std::string& name, const BT::NodeConfig& config)
+        { return std::make_unique<ReturnToBase>(name, config, simulation); }
     );
 }
 

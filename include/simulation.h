@@ -297,6 +297,12 @@ public:
      */
     Robot& getRobot();
 
+    /**
+     * @brief Returns the current Potential Fields resultant force acting on the robot
+     * @return Resultant force vector computed by the Sensors
+     */
+    Vector2 getResultantForce() const;
+
 private:
     World world_;      ///< The 2D grid world with obstacles
     Robot robot_;      ///< The UGV robot state

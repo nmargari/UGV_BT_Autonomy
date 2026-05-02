@@ -8,23 +8,23 @@
 
 #include <cmath>
 
-IsGoalReached::IsGoalReached(const std::string& name, const BT::NodeConfig& config)
+IsGoalReached::IsGoalReached(
+    const std::string&    name,
+    const BT::NodeConfig& config,
+    Simulation&           simulation)
     : BT::ConditionNode(name, config)
+    , simulation_(simulation)
 {}
 
 BT::PortsList IsGoalReached::providedPorts()
 {
-    return
-    {
-        BT::InputPort<Vector2>("robot_position"),
-        BT::InputPort<Vector2>("goal_position")
-    };
+    return {};
 }
 
 BT::NodeStatus IsGoalReached::tick()
 {
-    Vector2 pos  = getInput<Vector2>("robot_position").value();
-    Vector2 goal = getInput<Vector2>("goal_position").value();
+    Vector2 pos  = simulation_.getRobot().position;
+    Vector2 goal = simulation_.getWorld().goal;
 
     float dx   = pos.x - goal.x;
     float dy   = pos.y - goal.y;

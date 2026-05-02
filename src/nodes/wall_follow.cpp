@@ -7,71 +7,66 @@
 #include "config.h"
 
 WallFollow::WallFollow(
-    const std::string& name,
+    const std::string&    name,
     const BT::NodeConfig& config,
-    Simulation& simulation)
+    Simulation&           simulation)
     : BT::StatefulActionNode(name, config)
     , simulation_(simulation)
+    , wall_dir_(Direction::N)
 {}
 
 BT::PortsList WallFollow::providedPorts()
 {
-    return
-    {
-        BT::InputPort<std::array<bool, 8>>("neighbors_blocked"),
-        BT::InputPort<Direction>("compass_heading"),
-        BT::InputPort<bool>("is_stuck"),
-        BT::InputPort<Vector2>("resultant_force")
-    };
+    return {};
 }
 
 BT::NodeStatus WallFollow::onStart()
 {
-    simulation_.getRobot().wall_following = true;
+    Robot& robot         = simulation_.getRobot();
+    robot.wall_following = true;
+    wall_dir_            = robot.compass;
     return BT::NodeStatus::RUNNING;
 }
 
 BT::NodeStatus WallFollow::onRunning()
 {
-    auto blocked = getInput<std::array<bool, 8>>("neighbors_blocked").value();
-    Direction heading = getInput<Direction>("compass_heading").value();
-    Vector2 force = getInput<Vector2>("resultant_force").value();
+    Robot&       robot = simulation_.getRobot();
+    const World& world = simulation_.getWorld();
 
-    Direction force_dir = snapToDirection(force);
-    int force_index = static_cast<int>(force_dir);
-
-    if(!blocked[force_index])
+    // Exit when robot is no longer stuck
+    if (robot.stuck_counter == 0)
     {
-        simulation_.getRobot().wall_following = false;
-        simulation_.getRobot().stuck_counter = 0;
-
+        robot.wall_following = false;
         return BT::NodeStatus::FAILURE;
     }
 
-    Direction side = Config::WALL_FOLLOW_RIGHT ? rightOf(heading) : leftOf(heading);
-    Direction away = Config::WALL_FOLLOW_RIGHT ? leftOf(heading) : rightOf(heading);
+    // Right-hand rule: try right → forward → left → back
+    Direction candidates[4] =
+    {
+        rotateClockwise90(wall_dir_),
+        wall_dir_,
+        rotateCounterClockwise90(wall_dir_),
+        rotateClockwise90(rotateClockwise90(wall_dir_))
+    };
 
-    int side_index = static_cast<int>(side);
-    int front_index = static_cast<int>(heading);
-    int away_index = static_cast<int>(away);
+    for (Direction dir : candidates)
+    {
+        int d  = static_cast<int>(dir);
+        int nx = static_cast<int>(robot.getCell().x) + DIRECTION_DX[d];
+        int ny = static_cast<int>(robot.getCell().y) + DIRECTION_DY[d];
 
-    Robot& robot = simulation_.getRobot();
+        if (world.isWalkable(nx, ny))
+        {
+            robot.move(dir, 1.0f / Config::FPS_TARGET);
+            wall_dir_ = dir;
 
-    if(!blocked[side_index])
-    {
-        robot.move(side, 1.0f / Config::FPS_TARGET);
-    }
-    else if(!blocked[front_index])
-    {
-        robot.move(heading, 1.0f / Config::FPS_TARGET);
-    }
-    else if(!blocked[away_index])
-    {
-        robot.move(away, 1.0f / Config::FPS_TARGET);
-    }
-    else
-    {
-        robot.setCompass(away);
+            if (robot.stuck_counter > 0)
+            {
+                robot.stuck_counter--;
+            }
+
+            return BT::NodeStatus::RUNNING;
+        }
     }
 
     return BT::NodeStatus::RUNNING;
@@ -80,14 +75,4 @@ BT::NodeStatus WallFollow::onRunning()
 void WallFollow::onHalted()
 {
     simulation_.getRobot().wall_following = false;
-}
-
-Direction WallFollow::rightOf(Direction heading) const
-{
-    return rotateClockwise90(heading);
-}
-
-Direction WallFollow::leftOf(Direction heading) const
-{
-    return rotateCounterClockwise90(heading);
 }

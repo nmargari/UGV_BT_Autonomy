@@ -18,11 +18,7 @@ ReturnToBase::ReturnToBase(
 
 BT::PortsList ReturnToBase::providedPorts()
 {
-    return
-    {
-        BT::InputPort<Vector2>("robot_position"),
-        BT::InputPort<Vector2>("base_position")
-    };
+    return {};
 }
 
 BT::NodeStatus ReturnToBase::onStart()
@@ -32,34 +28,39 @@ BT::NodeStatus ReturnToBase::onStart()
 
 BT::NodeStatus ReturnToBase::onRunning()
 {
-    Vector2 pos  = getInput<Vector2>("robot_position").value();
-    Vector2 base = getInput<Vector2>("base_position").value();
+    Robot&       robot = simulation_.getRobot();
+    const World& world = simulation_.getWorld();
 
-    float dx   = pos.x - base.x;
-    float dy   = pos.y - base.y;
+    float dx   = robot.position.x - world.start.x;
+    float dy   = robot.position.y - world.start.y;
     float dist = std::sqrt(dx * dx + dy * dy);
 
-    // Check if base is reached
     if (dist <= Config::GOAL_REACH_DIST)
     {
         return BT::NodeStatus::SUCCESS;
     }
 
-    // Compute attractive force toward base
+    // Attractive force toward base only
     Vector2 f_att =
     {
-        Config::K_ATT * (base.x - pos.x),
-        Config::K_ATT * (base.y - pos.y)
+        Config::K_ATT * (world.start.x - robot.position.x),
+        Config::K_ATT * (world.start.y - robot.position.y)
     };
 
-    // Snap force to nearest compass direction and move
     Direction dir = snapToDirection(f_att);
-    simulation_.getRobot().move(dir, 1.0f / Config::FPS_TARGET);
+
+    int d  = static_cast<int>(dir);
+    int nx = static_cast<int>(robot.getCell().x) + DIRECTION_DX[d];
+    int ny = static_cast<int>(robot.getCell().y) + DIRECTION_DY[d];
+
+    if (world.isWalkable(nx, ny))
+    {
+        robot.move(dir, 1.0f / Config::FPS_TARGET);
+    }
 
     return BT::NodeStatus::RUNNING;
 }
 
 void ReturnToBase::onHalted()
 {
-    // Nothing to clean up
 }

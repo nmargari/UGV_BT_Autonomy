@@ -433,3 +433,8 @@ Robot& Simulation::getRobot()
 {
     return robot_;
 }
+
+Vector2 Simulation::getResultantForce() const
+{
+    return sensors_.computeResultantForce(world_, robot_);
+}

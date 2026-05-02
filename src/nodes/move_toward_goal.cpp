@@ -16,7 +16,7 @@ MoveTowardGoal::MoveTowardGoal(
 
 BT::PortsList MoveTowardGoal::providedPorts()
 {
-    return { BT::InputPort<Vector2>("resultant_force") };
+    return {};
 }
 
 BT::NodeStatus MoveTowardGoal::onStart()
@@ -26,16 +26,29 @@ BT::NodeStatus MoveTowardGoal::onStart()
 
 BT::NodeStatus MoveTowardGoal::onRunning()
 {
-    Vector2 force = getInput<Vector2>("resultant_force").value();
-    Direction dir = snapToDirection(force);
+    Robot&       robot = simulation_.getRobot();
+    const World& world = simulation_.getWorld();
 
-    simulation_.getRobot().move(dir, 1.0f / Config::FPS_TARGET);
+    Vector2   force = simulation_.getResultantForce();
+    Direction dir   = snapToDirection(force);
 
-    // Stuck counter is managed by simulation.update() — not here
-    return BT::NodeStatus::SUCCESS;
+    int d  = static_cast<int>(dir);
+    int nx = static_cast<int>(robot.getCell().x) + DIRECTION_DX[d];
+    int ny = static_cast<int>(robot.getCell().y) + DIRECTION_DY[d];
+
+    if (!world.isWalkable(nx, ny))
+    {
+        // Blocked — increment stuck counter and signal FAILURE
+        // so the Fallback activates WallFollow
+        robot.stuck_counter++;
+        return BT::NodeStatus::FAILURE;
+    }
+
+    robot.move(dir, 1.0f / Config::FPS_TARGET);
+    robot.stuck_counter = 0;
+    return BT::NodeStatus::RUNNING;
 }
 
 void MoveTowardGoal::onHalted()
 {
-    // Nothing to clean up
 }
