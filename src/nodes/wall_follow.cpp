@@ -35,7 +35,7 @@ BT::NodeStatus WallFollow::onRunning()
 {
     auto blocked = getInput<std::array<bool, 8>>("neighbors_blocked").value();
     Direction heading = getInput<Direction>("compass_heading").value();
-    Vector2 force = getInput<Vector2>(resultant_force).value();
+    Vector2 force = getInput<Vector2>("resultant_force").value();
 
     Direction force_dir = snapToDirection(force);
     int force_index = static_cast<int>(force_dir);
@@ -45,11 +45,11 @@ BT::NodeStatus WallFollow::onRunning()
         simulation_.getRobot().wall_following = false;
         simulation_.getRobot().stuck_counter = 0;
 
-        return BT:NodeStatus::FAILURE;
+        return BT::NodeStatus::FAILURE;
     }
 
     Direction side = Config::WALL_FOLLOW_RIGHT ? rightOf(heading) : leftOf(heading);
-    Direction away = Config::Wall_FOLLOW_RIGHT ? leftOf(heading) : rightOf(heading);
+    Direction away = Config::WALL_FOLLOW_RIGHT ? leftOf(heading) : rightOf(heading);
 
     int side_index = static_cast<int>(side);
     int front_index = static_cast<int>(heading);
