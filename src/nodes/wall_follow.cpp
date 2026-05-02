@@ -41,17 +41,14 @@ BT::NodeStatus WallFollow::onRunning()
     }
 
     // Right-hand rule: try right → forward → left → back
-    Direction candidates[4] =
-    {
-        rotateClockwise90(wall_dir_),
-        wall_dir_,
-        rotateCounterClockwise90(wall_dir_),
-        rotateClockwise90(rotateClockwise90(wall_dir_))
-    };
+    Direction candidates[4] = { rotateClockwise90(wall_dir_),
+                                wall_dir_,
+                                rotateCounterClockwise90(wall_dir_),
+                                rotateClockwise90(rotateClockwise90(wall_dir_)) };
 
     for (Direction dir : candidates)
     {
-        int d  = static_cast<int>(dir);
+        int d = static_cast<int>(dir);
         int nx = static_cast<int>(robot.getCell().x) + DIRECTION_DX[d];
         int ny = static_cast<int>(robot.getCell().y) + DIRECTION_DY[d];
 

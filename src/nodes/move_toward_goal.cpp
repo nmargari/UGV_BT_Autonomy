@@ -7,9 +7,9 @@
 #include "config.h"
 
 MoveTowardGoal::MoveTowardGoal(
-    const std::string&    name,
+    const std::string& name,
     const BT::NodeConfig& config,
-    Simulation&           simulation)
+    Simulation& simulation)
     : BT::StatefulActionNode(name, config)
     , simulation_(simulation)
 {}
@@ -26,22 +26,28 @@ BT::NodeStatus MoveTowardGoal::onStart()
 
 BT::NodeStatus MoveTowardGoal::onRunning()
 {
-    Robot&       robot = simulation_.getRobot();
+    Robot& robot = simulation_.getRobot();
     const World& world = simulation_.getWorld();
 
-    Vector2   force = simulation_.getResultantForce();
-    Direction dir   = snapToDirection(force);
+    Vector2 force = simulation_.getResultantForce();
+    Direction dir = snapToDirection(force);
 
-    int d  = static_cast<int>(dir);
+    int d = static_cast<int>(dir);
     int nx = static_cast<int>(robot.getCell().x) + DIRECTION_DX[d];
     int ny = static_cast<int>(robot.getCell().y) + DIRECTION_DY[d];
 
     if (!world.isWalkable(nx, ny))
     {
-        // Blocked — increment stuck counter and signal FAILURE
-        // so the Fallback activates WallFollow
         robot.stuck_counter++;
-        return BT::NodeStatus::FAILURE;
+
+        if (robot.stuck_counter >= Config::STUCK_THRESHOLD)
+        {
+            return BT::NodeStatus::FAILURE;
+        }
+        else
+        {
+            return BT::NodeStatus::RUNNING;
+        }
     }
 
     robot.move(dir, 1.0f / Config::FPS_TARGET);

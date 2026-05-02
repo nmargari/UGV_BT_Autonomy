@@ -12,16 +12,16 @@
 //  Colors
 // ─────────────────────────────────────────────
 
-static constexpr Color COLOR_GRID_BG    = { 245, 245, 245, 255 };  ///< Free cell background
-static constexpr Color COLOR_GRID_LINE  = { 210, 210, 210, 255 };  ///< Grid line color
-static constexpr Color COLOR_OBSTACLE   = {  60,  60,  60, 255 };  ///< Obstacle cell
-static constexpr Color COLOR_INFLATED   = { 180, 180, 180, 255 };  ///< Inflated obstacle margin
-static constexpr Color COLOR_ROBOT      = {  30, 120, 255, 255 };  ///< Robot fill
-static constexpr Color COLOR_ROBOT_DIR  = { 255, 255, 255, 255 };  ///< Robot heading indicator
-static constexpr Color COLOR_GOAL       = {  50, 200,  80, 255 };  ///< Goal cell
-static constexpr Color COLOR_FORCE      = { 255,  80,  80, 255 };  ///< Force vector arrow
-static constexpr Color COLOR_HUD_BG     = {   0,   0,   0, 160 };  ///< HUD background
-static constexpr Color COLOR_HUD_TEXT   = { 240, 240, 240, 255 };  ///< HUD text
+static constexpr Color COLOR_GRID_BG = { 245, 245, 245, 255 };  ///< Free cell background
+static constexpr Color COLOR_GRID_LINE = { 210, 210, 210, 255 };  ///< Grid line color
+static constexpr Color COLOR_OBSTACLE = {  60,  60,  60, 255 };  ///< Obstacle cell
+static constexpr Color COLOR_INFLATED = { 180, 180, 180, 255 };  ///< Inflated obstacle margin
+static constexpr Color COLOR_ROBOT = {  30, 120, 255, 255 };  ///< Robot fill
+static constexpr Color COLOR_ROBOT_DIR = { 255, 255, 255, 255 };  ///< Robot heading indicator
+static constexpr Color COLOR_GOAL = {  50, 200,  80, 255 };  ///< Goal cell
+static constexpr Color COLOR_FORCE = { 255,  80,  80, 255 };  ///< Force vector arrow
+static constexpr Color COLOR_HUD_BG = {   0,   0,   0, 160 };  ///< HUD background
+static constexpr Color COLOR_HUD_TEXT = { 240, 240, 240, 255 };  ///< HUD text
 static constexpr Color COLOR_BATTERY_OK = {  50, 200,  80, 255 };  ///< Battery bar — normal
 static constexpr Color COLOR_BATTERY_LO = { 220,  60,  60, 255 };  ///< Battery bar — low
 
@@ -159,6 +159,10 @@ void Renderer::drawHUD(const Robot& robot)
     // Wall following status
     std::string mode_str = robot.wall_following ? "Mode: Wall Follow" : "Mode: Potential Fields";
     DrawText(mode_str.c_str(), 16, 70, 12, COLOR_HUD_TEXT);
+
+    // Stuck counter
+    std::string stuck_str = std::to_string(robot.stuck_counter);
+    DrawText(stuck_str.c_str(), 16, 88, 12, COLOR_HUD_TEXT);
 }
 
 void Renderer::draw(const Simulation& simulation)
