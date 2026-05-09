@@ -199,7 +199,7 @@ void World::inflate()
 
     // Always keep start and goal walkable regardless of inflation
     inflated_grid[static_cast<int>(start.y)][static_cast<int>(start.x)] = false;
-    inflated_grid[static_cast<int>(goal.y)] [static_cast<int>(goal.x)] = false;
+    inflated_grid[static_cast<int>(goal.y)][static_cast<int>(goal.x)] = false;
 }
 
 bool World::inBounds(int x, int y) const

@@ -7,9 +7,9 @@
 #include "config.h"
 
 WallFollow::WallFollow(
-    const std::string&    name,
+    const std::string& name,
     const BT::NodeConfig& config,
-    Simulation&           simulation)
+    Simulation& simulation)
     : BT::StatefulActionNode(name, config)
     , simulation_(simulation)
     , wall_dir_(Direction::N)
@@ -22,15 +22,15 @@ BT::PortsList WallFollow::providedPorts()
 
 BT::NodeStatus WallFollow::onStart()
 {
-    Robot& robot         = simulation_.getRobot();
+    Robot& robot = simulation_.getRobot();
     robot.wall_following = true;
-    wall_dir_            = robot.compass;
+    wall_dir_ = robot.compass;
     return BT::NodeStatus::RUNNING;
 }
 
 BT::NodeStatus WallFollow::onRunning()
 {
-    Robot&       robot = simulation_.getRobot();
+    Robot& robot = simulation_.getRobot();
     const World& world = simulation_.getWorld();
 
     // Exit when robot is no longer stuck
