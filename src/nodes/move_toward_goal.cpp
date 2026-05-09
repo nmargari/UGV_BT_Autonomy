@@ -38,20 +38,10 @@ BT::NodeStatus MoveTowardGoal::onRunning()
 
     if (!world.isWalkable(nx, ny))
     {
-        robot.stuck_counter++;
-
-        if (robot.stuck_counter >= Config::STUCK_THRESHOLD)
-        {
-            return BT::NodeStatus::FAILURE;
-        }
-        else
-        {
-            return BT::NodeStatus::RUNNING;
-        }
+        return BT::NodeStatus::FAILURE;
     }
 
     robot.move(dir, 1.0f / Config::FPS_TARGET);
-    robot.stuck_counter = 0;
     return BT::NodeStatus::RUNNING;
 }
 

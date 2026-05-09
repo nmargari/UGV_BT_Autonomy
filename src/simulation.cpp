@@ -398,24 +398,6 @@ Simulation::Simulation(BT::Blackboard::Ptr blackboard)
 void Simulation::update(float dt)
 {
     robot_.drainBattery();
-
-    // Update stuck counter based on progress toward goal
-    float dx = robot_.position.x - world_.goal.x;
-    float dy = robot_.position.y - world_.goal.y;
-    float dist = std::sqrt(dx * dx + dy * dy);
-
-    if (dist < robot_.prev_dist_to_goal - 0.05f)
-    {
-        // Robot made progress — reset counter
-        robot_.stuck_counter     = 0;
-        robot_.prev_dist_to_goal = dist;
-    }
-    else
-    {
-        // No progress — increment counter
-        robot_.stuck_counter++;
-    }
-
     sensors_.writeBlackboard(blackboard_, world_, robot_);
 }
 
