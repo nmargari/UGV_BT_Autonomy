@@ -30,15 +30,16 @@ BT::NodeStatus WallFollow::onStart()
 
 BT::NodeStatus WallFollow::onRunning()
 {
-    Robot&       robot = simulation_.getRobot();
+    Robot& robot = simulation_.getRobot();
     const World& world = simulation_.getWorld();
 
     // Exit when the resultant force direction is clear again
-    Vector2   force    = simulation_.getResultantForce();
+    Vector2 force = simulation_.getResultantForce();
     Direction goal_dir = snapToDirection(force);
-    int       goal_d   = static_cast<int>(goal_dir);
-    int       goal_nx  = static_cast<int>(robot.getCell().x) + DIRECTION_DX[goal_d];
-    int       goal_ny  = static_cast<int>(robot.getCell().y) + DIRECTION_DY[goal_d];
+
+    int goal_d = static_cast<int>(goal_dir);
+    int goal_nx = static_cast<int>(robot.getCell().x) + DIRECTION_DX[goal_d];
+    int goal_ny = static_cast<int>(robot.getCell().y) + DIRECTION_DY[goal_d];
 
     if (world.isWalkable(goal_nx, goal_ny))
     {
@@ -47,13 +48,11 @@ BT::NodeStatus WallFollow::onRunning()
     }
 
     // Right-hand rule — wall_dir_ stays FIXED
-    Direction candidates[4] =
-    {
-        rotateClockwise90(wall_dir_),
-        wall_dir_,
-        rotateCounterClockwise90(wall_dir_),
-        rotateClockwise90(rotateClockwise90(wall_dir_))
-    };
+    Direction candidates[4] = { rotateClockwise90(wall_dir_),
+                                wall_dir_,
+                                rotateCounterClockwise90(wall_dir_),
+                                rotateClockwise90(rotateClockwise90(wall_dir_))
+                              };
 
     for (Direction dir : candidates)
     {
